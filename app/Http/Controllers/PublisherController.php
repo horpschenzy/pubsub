@@ -15,20 +15,24 @@ class PublisherController extends Controller
         $message = collect($request->all());
 
         //Check if there are subscribers
+        $client = new Client();
         if(count($get_subscribers)){
-            $client = new Client();
             $subscribers = [];
 
             foreach ($get_subscribers as $subscriber) {
-                $subscribers[] = $client->requestAsync('POST', $subscriber->url, [
-                    'topic' => $topic,
-                    'data' => $message
+                $subscribers[] = $client->requestAsync('POST',$subscriber->url, [
+                    'body' => json_encode([
+                        'topic' => $topic,
+                        'data' => json_encode($message),
+                    ]),
                 ]);
             }
             //initiate the POST request
             $responses = Utils::settle($subscribers)->wait();
+           
             $fulfilled = 0;
             $rejected = 0;
+            
             foreach ($responses as $response) {
                $state = $response['state'];
                if($state == 'fulfilled'){
