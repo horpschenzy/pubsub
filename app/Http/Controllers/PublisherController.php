@@ -12,8 +12,7 @@ class PublisherController extends Controller
     public function publish(Request $request, $topic)
     {
         $get_subscribers = Subscriber::where('topic', $topic)->get();
-        $data['topic'] = $topic;
-        $data['message'] = collect($request->all());
+        $message = collect($request->all());
 
         //Check if there are subscribers
         if(count($get_subscribers)){
@@ -21,7 +20,10 @@ class PublisherController extends Controller
             $subscribers = [];
 
             foreach ($get_subscribers as $subscriber) {
-                $subscribers[] = $client->requestAsync('GET', $subscriber->url);
+                $subscribers[] = $client->requestAsync('POST', $subscriber->url, [
+                    'topic' => $topic,
+                    'data' => $message
+                ]);
             }
             //initiate the POST request
             $responses = Utils::settle($subscribers)->wait();
